@@ -478,7 +478,7 @@ function saveStop(){
 
   pending = null;
   document.getElementById('inputSection').style.display = 'none';
-  document.getElementById('gpsStatus').innerHTML = '<div class="row"><span class="label">Stato GPS</span><span class="val">Non acquisito</span></div>';
+  document.getElementById('gpsStatus').innerHTML = '<div class="row"><span class="label">Stato GPS</span><span class="val" id="gpsState">Non acquisito</span></div>';
   resetGpsButton();
   document.getElementById('captureTitle').textContent = '📍 Stop ' + (stops.length+1);
 
@@ -677,7 +677,7 @@ function resetAll(){
   closeEdit();
   document.getElementById('inputSection').style.display = 'none';
   document.getElementById('captureTitle').textContent = '📍 Stop 1';
-  document.getElementById('gpsStatus').innerHTML = '<div class="row"><span class="label">Stato GPS</span><span class="val">Non acquisito</span></div>';
+  document.getElementById('gpsStatus').innerHTML = '<div class="row"><span class="label">Stato GPS</span><span class="val" id="gpsState">Non acquisito</span></div>';
   resetGpsButton();
   renderAll();
 }
