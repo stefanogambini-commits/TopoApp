@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TopoApp">
+<meta name="theme-color" content="#0f766e">
+<title>TopoApp</title>
+<style>
+  :root{
+    --primary:#0f766e;
+    --primary-dark:#0c5e58;
+    --accent:#f59e0b;
+    --bg:#f1f5f4;
+    --card:#ffffff;
+    --text:#1e293b;
+    --text-light:#64748b;
+    --border:#dbe4e2;
+    --success:#16a34a;
+    --danger:#dc2626;
+    --up:#16a34a;
+    --down:#dc2626;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:14px 14px 40px;}
+  header{
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:#fff;
+    padding:18px 16px 16px;
+    border-radius:0 0 18px 18px;
+    margin:-1px -14px 16px;
+    box-shadow:0 4px 14px rgba(15,118,110,.25);
+  }
+  header h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.5px;}
+  header p{margin:4px 0 0;font-size:13px;opacity:.85;}
+  header #projectDisplay{font-weight:700;opacity:1;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:14px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .card h2{
+    margin:0 0 10px;
+    font-size:14px;
+    font-weight:700;
+    color:var(--primary-dark);
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;
+    padding:14px;
+    font-size:16px;
+    font-weight:600;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    transition:transform .08s ease, opacity .15s ease;
+    -webkit-appearance:none;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:disabled{background:#9ca3af;color:#fff;opacity:.7;cursor:not-allowed;}
+  .btn-secondary{background:#fff;color:var(--primary-dark);border:1.5px solid var(--primary);}
+  .btn-danger{background:#fff;color:var(--danger);border:1.5px solid var(--danger);}
+  .btn-row{display:flex;gap:8px;}
+  .btn-row .btn{flex:1;}
+  .gps-status{
+    display:flex;flex-direction:column;gap:4px;
+    background:var(--bg);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:13px;
+    margin-bottom:12px;
+    border:1px solid var(--border);
+  }
+  .gps-status .row{display:flex;justify-content:space-between;}
+  .gps-status .label{color:var(--text-light);}
+  .gps-status .val{font-weight:600;font-variant-numeric:tabular-nums;}
+  .gps-warn{color:var(--danger);font-weight:600;}
+  .gps-ok{color:var(--success);font-weight:600;}
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    color:var(--text-light);
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    margin-bottom:6px;
+  }
+  .field input[type=number], .field input[type=text]{
+    width:100%;
+    font-size:18px;
+    padding:12px;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+    color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+  .field input:focus{outline:none;border-color:var(--primary);}
+  .toggle{
+    display:flex;gap:8px;margin-bottom:10px;
+  }
+  .toggle button{
+    flex:1;
+    padding:12px;
+    border-radius:10px;
+    border:1.5px solid var(--border);
+    background:#fff;
+    font-size:15px;
+    font-weight:700;
+    color:var(--text-light);
+    cursor:pointer;
+  }
+  .toggle button.active.up{background:var(--up);color:#fff;border-color:var(--up);}
+  .toggle button.active.down{background:var(--down);color:#fff;border-color:var(--down);}
+  .spinner{
+    width:18px;height:18px;border:3px solid rgba(255,255,255,.4);
+    border-top-color:#fff;border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{padding:6px 5px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th:first-child,td:first-child{text-align:left;}
+  th{
+    color:var(--text-light);
+    font-weight:700;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    position:sticky;top:0;background:#fff;
+  }
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;}
+  .pos{color:var(--up);font-weight:700;}
+  .neg{color:var(--down);font-weight:700;}
+  .summary-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  }
+  .summary-item{
+    background:var(--bg);
+    border-radius:10px;
+    padding:10px;
+    border:1px solid var(--border);
+  }
+  .summary-item .lbl{font-size:11px;color:var(--text-light);text-transform:uppercase;font-weight:700;letter-spacing:.4px;}
+  .summary-item .v{font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;}
+  .empty{text-align:center;color:var(--text-light);font-size:14px;padding:18px 0;}
+  .stop-badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    background:var(--primary);color:#fff;font-weight:700;
+    border-radius:50%;width:28px;height:28px;font-size:13px;flex-shrink:0;
+  }
+  .note-text{font-size:11px;color:var(--text-light);margin-top:2px;font-style:italic;}
+  .chart-box{width:100%;overflow:hidden;}
+  .footer-note{font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;line-height:1.5;}
+  .btn-edit{
+    background:none;border:none;cursor:pointer;font-size:16px;
+    padding:2px 6px;border-radius:6px;
+  }
+  .btn-edit:active{background:var(--bg);}
+  .edit-highlight{outline:2px solid var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🗻 TopoApp</h1>
+    <p>Rilievo variazioni topografiche tra stop <span id="projectDisplay"></span></p>
+  </header>
+
+  <!-- NOME RILIEVO -->
+  <div class="card">
+    <h2>🏷️ Rilievo</h2>
+    <div class="field" style="margin-bottom:0;">
+      <label>Nome rilievo / progetto</label>
+      <input type="text" id="projectName" placeholder="es. Abaiang_Transetto1" oninput="setProjectName(this.value)">
+    </div>
+  </div>
+
+  <!-- ACQUISIZIONE NUOVO STOP -->
+  <div class="card" id="captureCard">
+    <h2 id="captureTitle">📍 Stop 1</h2>
+
+    <div id="gpsStatus" class="gps-status">
+      <div class="row"><span class="label">Stato GPS</span><span class="val" id="gpsState">Non acquisito</span></div>
+    </div>
+
+    <button class="btn btn-primary" id="btnGps" onclick="acquireGPS()">
+      <span>📡 Acquisisci posizione GPS</span>
+    </button>
+
+    <div id="inputSection" style="display:none;margin-top:14px;">
+      <div id="stop1Field" class="field" style="display:none;">
+        <label>Quota di riferimento Stop 1 (m)</label>
+        <input type="number" inputmode="decimal" step="0.01" id="refElevation" placeholder="es. 12.50">
+      </div>
+
+      <div id="deltaField" style="display:none;">
+        <div class="toggle">
+          <button id="btnUp" class="up" onclick="setSign(1)">▲ Salita</button>
+          <button id="btnDown" class="down" onclick="setSign(-1)">▼ Discesa</button>
+        </div>
+        <div class="field">
+          <label>Δh rispetto allo stop precedente (m)</label>
+          <input type="number" inputmode="decimal" step="0.01" min="0" id="deltaMag" placeholder="es. 1.25">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Nota (opzionale)</label>
+        <input type="text" id="noteInput" placeholder="es. confluenza, sorgente...">
+      </div>
+
+      <button class="btn btn-primary" id="btnSave" onclick="saveStop()" disabled>
+        ✓ Registra Stop
+      </button>
+    </div>
+  </div>
+
+  <!-- MODIFICA STOP -->
+  <div class="card" id="editCard" style="display:none;">
+    <h2 id="editTitle">✏️ Modifica Stop</h2>
+
+    <div class="field">
+      <label>Latitudine</label>
+      <input type="number" inputmode="decimal" step="0.000001" id="editLat">
+    </div>
+    <div class="field">
+      <label>Longitudine</label>
+      <input type="number" inputmode="decimal" step="0.000001" id="editLon">
+    </div>
+
+    <div id="editStop1Field" class="field" style="display:none;">
+      <label>Quota di riferimento (m)</label>
+      <input type="number" inputmode="decimal" step="0.01" id="editRefElevation">
+    </div>
+
+    <div id="editDeltaField" style="display:none;">
+      <div class="toggle">
+        <button id="editBtnUp" class="up" onclick="setEditSign(1)">▲ Salita</button>
+        <button id="editBtnDown" class="down" onclick="setEditSign(-1)">▼ Discesa</button>
+      </div>
+      <div class="field">
+        <label>Δh rispetto allo stop precedente (m)</label>
+        <input type="number" inputmode="decimal" step="0.01" min="0" id="editDeltaMag">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Nota</label>
+      <input type="text" id="editNote">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeEdit()">Annulla</button>
+      <button class="btn btn-primary" onclick="saveEdit()">✓ Salva modifiche</button>
+    </div>
+  </div>
+
+  <!-- RIEPILOGO -->
+  <div class="card" id="summaryCard" style="display:none;">
+    <h2>📊 Riepilogo Rilievo</h2>
+    <div class="summary-grid">
+      <div class="summary-item"><div class="lbl">N. stop</div><div class="v" id="sumCount">0</div></div>
+      <div class="summary-item"><div class="lbl">Dislivello totale</div><div class="v" id="sumTotalDelta">0 m</div></div>
+      <div class="summary-item"><div class="lbl">Salita cumulata</div><div class="v" id="sumUp">0 m</div></div>
+      <div class="summary-item"><div class="lbl">Discesa cumulata</div><div class="v" id="sumDown">0 m</div></div>
+      <div class="summary-item"><div class="lbl">Quota iniziale</div><div class="v" id="sumStart">- m</div></div>
+      <div class="summary-item"><div class="lbl">Quota finale</div><div class="v" id="sumEnd">- m</div></div>
+      <div class="summary-item" style="grid-column:span 2;"><div class="lbl">Distanza totale percorsa</div><div class="v" id="sumDist">0 m</div></div>
+    </div>
+  </div>
+
+  <!-- PROFILO ALTIMETRICO -->
+  <div class="card" id="chartCard" style="display:none;">
+    <h2>📈 Profilo altimetrico</h2>
+    <div class="chart-box" id="chartBox"></div>
+  </div>
+
+  <!-- TABELLA -->
+  <div class="card" id="tableCard">
+    <h2>📋 Dati rilievo</h2>
+    <div id="tableContent">
+      <div class="empty">Nessuno stop registrato.<br>Acquisisci la posizione per iniziare.</div>
+    </div>
+  </div>
+
+  <!-- AZIONI -->
+  <div class="card" id="actionsCard" style="display:none;">
+    <h2>⚙️ Azioni</h2>
+    <div class="btn-row" style="margin-bottom:8px;">
+      <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Esporta CSV</button>
+      <button class="btn btn-secondary" onclick="exportCSVQGIS()">🗺️ Esporta CSV per QGIS</button>
+    </div>
+    <div class="btn-row" style="margin-bottom:8px;">
+      <button class="btn btn-secondary" onclick="deleteLast()">↩️ Elimina ultimo</button>
+    </div>
+    <button class="btn btn-danger" onclick="resetAll()">🗑️ Reset completo</button>
+  </div>
+
+  <p class="footer-note">
+    TopoApp · Coordinate GPS acquisite automaticamente · Quote calcolate da Δh manuali cumulati a partire dalla quota di riferimento dello Stop 1.<br>
+    L'export "CSV per QGIS" contiene colonne X/Y/Z pronte per "Aggiungi livello di testo delimitato".<br>
+    Per il salvataggio permanente dei dati sul telefono, consultare le note di distribuzione.
+  </p>
+</div>
+
+<script>
+let stops = [];
+let pending = null; // {lat, lon, acc, time}
+let currentSign = 1;
+let editSign = 1;
+let editIndex = null;
+let projectName = '';
+
+function fmt(n, d=2){
+  if(n===null || n===undefined || isNaN(n)) return '-';
+  return n.toFixed(d);
+}
+
+function setProjectName(v){
+  projectName = v.trim();
+  document.getElementById('projectDisplay').textContent = projectName ? ('— ' + projectName) : '';
+}
+
+function haversine(lat1,lon1,lat2,lon2){
+  const R = 6371000;
+  const toRad = d => d * Math.PI/180;
+  const dLat = toRad(lat2-lat1);
+  const dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function setSign(s){
+  currentSign = s;
+  document.getElementById('btnUp').classList.toggle('active', s===1);
+  document.getElementById('btnDown').classList.toggle('active', s===-1);
+}
+
+function setEditSign(s){
+  editSign = s;
+  document.getElementById('editBtnUp').classList.toggle('active', s===1);
+  document.getElementById('editBtnDown').classList.toggle('active', s===-1);
+}
+
+function acquireGPS(){
+  const btn = document.getElementById('btnGps');
+  const state = document.getElementById('gpsState');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span><span>Acquisizione in corso...</span>';
+  state.textContent = 'Acquisizione...';
+
+  if(!navigator.geolocation){
+    state.textContent = 'Geolocalizzazione non disponibile';
+    state.className = 'val gps-warn';
+    resetGpsButton();
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    pending = {
+      lat: pos.coords.latitude,
+      lon: pos.coords.longitude,
+      acc: pos.coords.accuracy,
+      time: new Date()
+    };
+    renderGpsStatus();
+    showInputSection();
+    resetGpsButton('✓ Posizione acquisita — premi per riacquisire');
+  }, err => {
+    let msg = 'Errore GPS: ' + err.message;
+    document.getElementById('gpsStatus').innerHTML =
+      '<div class="row"><span class="label">Stato GPS</span><span class="val gps-warn">' + msg + '</span></div>';
+    resetGpsButton();
+  }, { enableHighAccuracy:true, timeout:20000, maximumAge:0 });
+}
+
+function resetGpsButton(label){
+  const btn = document.getElementById('btnGps');
+  btn.disabled = false;
+  btn.innerHTML = '<span>📡 ' + (label || 'Acquisisci posizione GPS') + '</span>';
+}
+
+function renderGpsStatus(){
+  const box = document.getElementById('gpsStatus');
+  const accClass = pending.acc > 15 ? 'gps-warn' : 'gps-ok';
+  const accNote = pending.acc > 15 ? ' ⚠️ precisione scarsa' : ' ✓ precisione buona';
+  box.innerHTML = `
+    <div class="row"><span class="label">Latitudine</span><span class="val">${pending.lat.toFixed(6)}</span></div>
+    <div class="row"><span class="label">Longitudine</span><span class="val">${pending.lon.toFixed(6)}</span></div>
+    <div class="row"><span class="label">Precisione</span><span class="val ${accClass}">±${fmt(pending.acc,1)} m${accNote}</span></div>
+    <div class="row"><span class="label">Ora</span><span class="val">${pending.time.toLocaleTimeString('it-IT')}</span></div>
+  `;
+}
+
+function showInputSection(){
+  document.getElementById('inputSection').style.display = 'block';
+  const isFirst = stops.length === 0;
+  document.getElementById('stop1Field').style.display = isFirst ? 'block' : 'none';
+  document.getElementById('deltaField').style.display = isFirst ? 'none' : 'block';
+  if(!isFirst){ setSign(1); document.getElementById('deltaMag').value=''; }
+  else { document.getElementById('refElevation').value=''; }
+  document.getElementById('noteInput').value='';
+  validateSave();
+}
+
+document.addEventListener('input', e => {
+  if(e.target.id === 'refElevation' || e.target.id === 'deltaMag') validateSave();
+});
+
+function validateSave(){
+  const isFirst = stops.length === 0;
+  const btn = document.getElementById('btnSave');
+  if(!pending){ btn.disabled = true; return; }
+  if(isFirst){
+    const v = document.getElementById('refElevation').value;
+    btn.disabled = (v === '' || isNaN(parseFloat(v)));
+  } else {
+    const v = document.getElementById('deltaMag').value;
+    btn.disabled = (v === '' || isNaN(parseFloat(v)) || parseFloat(v) < 0);
+  }
+}
+
+function saveStop(){
+  const isFirst = stops.length === 0;
+  let deltaH = 0, elevation;
+
+  if(isFirst){
+    elevation = parseFloat(document.getElementById('refElevation').value);
+    deltaH = null;
+  } else {
+    const mag = parseFloat(document.getElementById('deltaMag').value) || 0;
+    deltaH = currentSign * mag;
+    elevation = stops[stops.length-1].elevation + deltaH;
+  }
+
+  let distance = null, slope = null;
+  if(!isFirst){
+    const prev = stops[stops.length-1];
+    distance = haversine(prev.lat, prev.lon, pending.lat, pending.lon);
+    slope = distance > 0 ? (deltaH/distance)*100 : null;
+  }
+
+  stops.push({
+    n: stops.length+1,
+    time: pending.time,
+    lat: pending.lat,
+    lon: pending.lon,
+    acc: pending.acc,
+    deltaH: deltaH,
+    elevation: elevation,
+    distance: distance,
+    slope: slope,
+    note: document.getElementById('noteInput').value.trim()
+  });
+
+  pending = null;
+  document.getElementById('inputSection').style.display = 'none';
+  document.getElementById('gpsStatus').innerHTML = '<div class="row"><span class="label">Stato GPS</span><span class="val">Non acquisito</span></div>';
+  resetGpsButton();
+  document.getElementById('captureTitle').textContent = '📍 Stop ' + (stops.length+1);
+
+  renderAll();
+}
+
+function renderAll(){
+  renderTable();
+  renderSummary();
+  renderChart();
+  document.getElementById('summaryCard').style.display = stops.length ? 'block' : 'none';
+  document.getElementById('chartCard').style.display = stops.length ? 'block' : 'none';
+  document.getElementById('actionsCard').style.display = stops.length ? 'block' : 'none';
+}
+
+function renderTable(){
+  const el = document.getElementById('tableContent');
+  if(stops.length === 0){
+    el.innerHTML = '<div class="empty">Nessuno stop registrato.<br>Acquisisci la posizione per iniziare.</div>';
+    return;
+  }
+  let rows = stops.map((s,i) => {
+    const dCls = s.deltaH === null ? '' : (s.deltaH >= 0 ? 'pos' : 'neg');
+    const dVal = s.deltaH === null ? '—' : (s.deltaH>=0?'+':'') + fmt(s.deltaH,2);
+    return `<tr>
+      <td><span class="stop-badge">${s.n}</span></td>
+      <td>${s.time.toLocaleTimeString('it-IT')}</td>
+      <td>${s.lat.toFixed(5)}</td>
+      <td>${s.lon.toFixed(5)}</td>
+      <td>±${fmt(s.acc,1)}</td>
+      <td class="${dCls}">${dVal}</td>
+      <td><b>${fmt(s.elevation,2)}</b></td>
+      <td>${s.distance===null?'—':fmt(s.distance,1)}</td>
+      <td>${s.slope===null?'—':fmt(s.slope,1)+'%'}</td>
+      <td><button class="btn-edit" onclick="openEdit(${i})" title="Modifica stop">✏️</button></td>
+    </tr>${s.note ? `<tr><td></td><td colspan="9" class="note-text">📝 ${s.note}</td></tr>` : ''}`;
+  }).join('');
+
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Stop</th><th>Ora</th><th>Lat</th><th>Lon</th><th>Prec.(m)</th><th>Δh(m)</th><th>Quota(m)</th><th>Dist.(m)</th><th>Pend.</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function renderSummary(){
+  if(stops.length === 0) return;
+  const start = stops[0].elevation;
+  const end = stops[stops.length-1].elevation;
+  let up=0, down=0, dist=0;
+  stops.forEach(s=>{
+    if(s.deltaH !== null){
+      if(s.deltaH>0) up += s.deltaH; else down += Math.abs(s.deltaH);
+    }
+    if(s.distance!==null) dist += s.distance;
+  });
+
+  document.getElementById('sumCount').textContent = stops.length;
+  document.getElementById('sumTotalDelta').textContent = (end-start>=0?'+':'') + fmt(end-start,2) + ' m';
+  document.getElementById('sumTotalDelta').style.color = (end-start)>=0 ? 'var(--up)' : 'var(--down)';
+  document.getElementById('sumUp').textContent = '+' + fmt(up,2) + ' m';
+  document.getElementById('sumDown').textContent = '-' + fmt(down,2) + ' m';
+  document.getElementById('sumStart').textContent = fmt(start,2) + ' m';
+  document.getElementById('sumEnd').textContent = fmt(end,2) + ' m';
+  document.getElementById('sumDist').textContent = fmt(dist,1) + ' m';
+}
+
+function renderChart(){
+  const box = document.getElementById('chartBox');
+  if(stops.length === 0){ box.innerHTML=''; return; }
+
+  // build cumulative distance axis
+  let cumDist = 0;
+  const pts = stops.map((s,i) => {
+    if(i>0) cumDist += (s.distance||0);
+    return {x: cumDist, y: s.elevation, n: s.n};
+  });
+
+  const W = 600, H = 220, pad = {l:46,r:16,t:16,b:30};
+  const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
+  let minX = Math.min(...xs), maxX = Math.max(...xs);
+  let minY = Math.min(...ys), maxY = Math.max(...ys);
+  if(minX===maxX){ minX -= 1; maxX += 1; }
+  if(minY===maxY){ minY -= 1; maxY += 1; }
+  const yPad = (maxY-minY)*0.1;
+  minY -= yPad; maxY += yPad;
+
+  const xScale = x => pad.l + (x-minX)/(maxX-minX) * (W-pad.l-pad.r);
+  const yScale = y => H-pad.b - (y-minY)/(maxY-minY) * (H-pad.t-pad.b);
+
+  const linePoints = pts.map(p => `${xScale(p.x)},${yScale(p.y)}`).join(' ');
+
+  // grid lines (y)
+  let gridLines = '';
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const val = minY + (maxY-minY)*i/steps;
+    const y = yScale(val);
+    gridLines += `<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/>`;
+    gridLines += `<text x="${pad.l-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#64748b">${val.toFixed(1)}</text>`;
+  }
+
+  const dots = pts.map(p => `
+    <circle cx="${xScale(p.x)}" cy="${yScale(p.y)}" r="4" fill="#0f766e" stroke="#fff" stroke-width="1.5"/>
+    <text x="${xScale(p.x)}" y="${yScale(p.y)-9}" text-anchor="middle" font-size="10" font-weight="700" fill="#0c5e58">${p.n}</text>
+  `).join('');
+
+  const xLabel = `<text x="${W/2}" y="${H-4}" text-anchor="middle" font-size="10" fill="#64748b">Distanza cumulata (m)</text>`;
+  const xMinLabel = `<text x="${pad.l}" y="${H-14}" text-anchor="start" font-size="10" fill="#64748b">${minX.toFixed(0)}</text>`;
+  const xMaxLabel = `<text x="${W-pad.r}" y="${H-14}" text-anchor="end" font-size="10" fill="#64748b">${maxX.toFixed(0)}</text>`;
+
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">
+    ${gridLines}
+    <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H-pad.b}" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" stroke="#94a3b8" stroke-width="1.5"/>
+    <polyline points="${linePoints}" fill="none" stroke="#0f766e" stroke-width="2.5"/>
+    ${dots}
+    ${xLabel}${xMinLabel}${xMaxLabel}
+  </svg>`;
+}
+
+function recomputeChain(){
+  for(let i=1;i<stops.length;i++){
+    stops[i].elevation = stops[i-1].elevation + stops[i].deltaH;
+    stops[i].distance = haversine(stops[i-1].lat, stops[i-1].lon, stops[i].lat, stops[i].lon);
+    stops[i].slope = stops[i].distance > 0 ? (stops[i].deltaH/stops[i].distance)*100 : null;
+  }
+}
+
+function openEdit(i){
+  editIndex = i;
+  const s = stops[i];
+  document.getElementById('editTitle').textContent = '✏️ Modifica Stop ' + s.n;
+  document.getElementById('editLat').value = s.lat.toFixed(6);
+  document.getElementById('editLon').value = s.lon.toFixed(6);
+  document.getElementById('editNote').value = s.note || '';
+
+  const isFirst = i === 0;
+  document.getElementById('editStop1Field').style.display = isFirst ? 'block' : 'none';
+  document.getElementById('editDeltaField').style.display = isFirst ? 'none' : 'block';
+
+  if(isFirst){
+    document.getElementById('editRefElevation').value = s.elevation.toFixed(2);
+  } else {
+    setEditSign(s.deltaH >= 0 ? 1 : -1);
+    document.getElementById('editDeltaMag').value = Math.abs(s.deltaH).toFixed(2);
+  }
+
+  document.getElementById('editCard').style.display = 'block';
+  document.getElementById('editCard').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function closeEdit(){
+  editIndex = null;
+  document.getElementById('editCard').style.display = 'none';
+}
+
+function saveEdit(){
+  if(editIndex === null) return;
+  const s = stops[editIndex];
+
+  const lat = parseFloat(document.getElementById('editLat').value);
+  const lon = parseFloat(document.getElementById('editLon').value);
+  if(!isNaN(lat)) s.lat = lat;
+  if(!isNaN(lon)) s.lon = lon;
+  s.note = document.getElementById('editNote').value.trim();
+
+  if(editIndex === 0){
+    const v = parseFloat(document.getElementById('editRefElevation').value);
+    if(!isNaN(v)) s.elevation = v;
+  } else {
+    const mag = parseFloat(document.getElementById('editDeltaMag').value) || 0;
+    s.deltaH = editSign * mag;
+  }
+
+  recomputeChain();
+  closeEdit();
+  renderAll();
+}
+
+function deleteLast(){
+  if(stops.length === 0) return;
+  if(!confirm("Eliminare l'ultimo stop registrato (Stop " + stops.length + ")?")) return;
+  stops.pop();
+  document.getElementById('captureTitle').textContent = '📍 Stop ' + (stops.length+1);
+  if(editIndex !== null && editIndex >= stops.length) closeEdit();
+  renderAll();
+}
+
+function resetAll(){
+  if(stops.length === 0) return;
+  if(!confirm("Eliminare TUTTI i dati del rilievo? L'operazione non è reversibile.")) return;
+  stops = [];
+  pending = null;
+  closeEdit();
+  document.getElementById('inputSection').style.display = 'none';
+  document.getElementById('captureTitle').textContent = '📍 Stop 1';
+  document.getElementById('gpsStatus').innerHTML = '<div class="row"><span class="label">Stato GPS</span><span class="val">Non acquisito</span></div>';
+  resetGpsButton();
+  renderAll();
+}
+
+function timestampStr(){
+  return new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+}
+
+function safeProjectName(){
+  return projectName ? projectName.replace(/[^a-zA-Z0-9_\-]/g,'_') : 'rilievo';
+}
+
+function exportCSV(){
+  if(stops.length === 0) return;
+  const header = ['Rilievo','Stop','Ora','Latitudine','Longitudine','Precisione_m','Delta_h_m','Quota_m','Distanza_m','Pendenza_pct','Nota'];
+  const rows = stops.map(s => [
+    projectName || '',
+    s.n,
+    s.time.toLocaleString('it-IT'),
+    s.lat.toFixed(6),
+    s.lon.toFixed(6),
+    fmt(s.acc,1),
+    s.deltaH===null?'':fmt(s.deltaH,2),
+    fmt(s.elevation,2),
+    s.distance===null?'':fmt(s.distance,1),
+    s.slope===null?'':fmt(s.slope,1),
+    (s.note||'').replace(/,/g,';')
+  ]);
+  const csv = [header.join(','), ...rows.map(r=>r.join(','))].join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `topoapp_${safeProjectName()}_${timestampStr()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportCSVQGIS(){
+  if(stops.length === 0) return;
+  // X/Y/Z columns first for direct use in QGIS "Add Delimited Text Layer"
+  // (X field = X, Y field = Y, Z field can be used for 3D / elevation attribute)
+  const header = ['X','Y','Z','stop_id','rilievo','ora','delta_h_m','distanza_m','pendenza_pct','precisione_m','nota'];
+  const rows = stops.map(s => [
+    s.lon.toFixed(6),
+    s.lat.toFixed(6),
+    fmt(s.elevation,2),
+    s.n,
+    projectName || '',
+    s.time.toLocaleString('it-IT'),
+    s.deltaH===null?'':fmt(s.deltaH,2),
+    s.distance===null?'':fmt(s.distance,1),
+    s.slope===null?'':fmt(s.slope,1),
+    fmt(s.acc,1),
+    (s.note||'').replace(/,/g,';')
+  ]);
+  const csv = [header.join(','), ...rows.map(r=>r.join(','))].join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `topoapp_qgis_${safeProjectName()}_${timestampStr()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
