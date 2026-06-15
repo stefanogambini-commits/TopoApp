@@ -690,6 +690,35 @@ function safeProjectName(){
   return projectName ? projectName.replace(/[^a-zA-Z0-9_\-]/g,'_') : 'rilievo';
 }
 
+async function shareOrDownloadCSV(csv, filename){
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+
+  // On iOS/Safari, prefer the native share sheet so the user can
+  // "Salva in File", AirDrop, Mail, ecc.
+  if(navigator.canShare && window.File){
+    try{
+      const file = new File([blob], filename, {type:'text/csv'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title: filename});
+        return;
+      }
+    }catch(err){
+      if(err && err.name === 'AbortError') return; // utente ha annullato
+      // altrimenti prosegui con il fallback download
+    }
+  }
+
+  // Fallback: download diretto (desktop / browser senza Web Share API)
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function exportCSV(){
   if(stops.length === 0) return;
   const header = ['Rilievo','Stop','Ora','Latitudine','Longitudine','Precisione_m','Delta_h_m','Quota_m','Distanza_m','Pendenza_pct','Nota'];
@@ -707,15 +736,7 @@ function exportCSV(){
     (s.note||'').replace(/,/g,';')
   ]);
   const csv = [header.join(','), ...rows.map(r=>r.join(','))].join('\n');
-  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `topoapp_${safeProjectName()}_${timestampStr()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  shareOrDownloadCSV(csv, `topoapp_${safeProjectName()}_${timestampStr()}.csv`);
 }
 
 function exportCSVQGIS(){
@@ -737,15 +758,7 @@ function exportCSVQGIS(){
     (s.note||'').replace(/,/g,';')
   ]);
   const csv = [header.join(','), ...rows.map(r=>r.join(','))].join('\n');
-  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `topoapp_qgis_${safeProjectName()}_${timestampStr()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  shareOrDownloadCSV(csv, `topoapp_qgis_${safeProjectName()}_${timestampStr()}.csv`);
 }
 </script>
 </body>
