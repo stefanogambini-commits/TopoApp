@@ -311,7 +311,7 @@
     <h2>⚙️ Azioni</h2>
     <div class="btn-row" style="margin-bottom:8px;">
       <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Esporta CSV</button>
-      <button class="btn btn-secondary" onclick="exportCSVQGIS()">🗺️ Esporta CSV per QGIS</button>
+      <button class="btn btn-secondary" onclick="exportDAT()">📐 Esporta DAT (Res2DInv)</button>
     </div>
     <div class="btn-row" style="margin-bottom:8px;">
       <button class="btn btn-secondary" onclick="deleteLast()">↩️ Elimina ultimo</button>
@@ -321,7 +321,8 @@
 
   <p class="footer-note">
     TopoApp · Coordinate GPS acquisite automaticamente · Quote calcolate da Δh manuali cumulati a partire dalla quota di riferimento dello Stop 1.<br>
-    L'export "CSV per QGIS" contiene colonne X/Y/Z pronte per "Aggiungi livello di testo delimitato".<br>
+    Export CSV: Stop, X (lon), Y (lat), Z (quota) — compatibile con QGIS "Aggiungi livello di testo delimitato".<br>
+    Export DAT: topografia in formato Res2DInv (distanza progressiva e quota per ogni stop).<br>
     Per il salvataggio permanente dei dati sul telefono, consultare le note di distribuzione.
   </p>
 </div>
@@ -690,14 +691,15 @@ function safeProjectName(){
   return projectName ? projectName.replace(/[^a-zA-Z0-9_\-]/g,'_') : 'rilievo';
 }
 
-async function shareOrDownloadCSV(csv, filename){
-  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+async function shareOrDownloadCSV(content, filename, mimeType){
+  mimeType = mimeType || 'text/csv;charset=utf-8;';
+  const blob = new Blob(['\ufeff'+content], {type:mimeType});
 
   // On iOS/Safari, prefer the native share sheet so the user can
   // "Salva in File", AirDrop, Mail, ecc.
   if(navigator.canShare && window.File){
     try{
-      const file = new File([blob], filename, {type:'text/csv'});
+      const file = new File([blob], filename, {type:mimeType});
       if(navigator.canShare({files:[file]})){
         await navigator.share({files:[file], title: filename});
         return;
@@ -721,44 +723,28 @@ async function shareOrDownloadCSV(csv, filename){
 
 function exportCSV(){
   if(stops.length === 0) return;
-  const header = ['Rilievo','Stop','Ora','Latitudine','Longitudine','Precisione_m','Delta_h_m','Quota_m','Distanza_m','Pendenza_pct','Nota'];
+  const header = ['Stop','X','Y','Z'];
   const rows = stops.map(s => [
-    projectName || '',
     s.n,
-    s.time.toLocaleString('it-IT'),
-    s.lat.toFixed(6),
     s.lon.toFixed(6),
-    fmt(s.acc,1),
-    s.deltaH===null?'':fmt(s.deltaH,2),
-    fmt(s.elevation,2),
-    s.distance===null?'':fmt(s.distance,1),
-    s.slope===null?'':fmt(s.slope,1),
-    (s.note||'').replace(/,/g,';')
+    s.lat.toFixed(6),
+    fmt(s.elevation,2)
   ]);
   const csv = [header.join(','), ...rows.map(r=>r.join(','))].join('\n');
   shareOrDownloadCSV(csv, `topoapp_${safeProjectName()}_${timestampStr()}.csv`);
 }
 
-function exportCSVQGIS(){
+function exportDAT(){
   if(stops.length === 0) return;
-  // X/Y/Z columns first for direct use in QGIS "Add Delimited Text Layer"
-  // (X field = X, Y field = Y, Z field can be used for 3D / elevation attribute)
-  const header = ['X','Y','Z','stop_id','rilievo','ora','delta_h_m','distanza_m','pendenza_pct','precisione_m','nota'];
-  const rows = stops.map(s => [
-    s.lon.toFixed(6),
-    s.lat.toFixed(6),
-    fmt(s.elevation,2),
-    s.n,
-    projectName || '',
-    s.time.toLocaleString('it-IT'),
-    s.deltaH===null?'':fmt(s.deltaH,2),
-    s.distance===null?'':fmt(s.distance,1),
-    s.slope===null?'':fmt(s.slope,1),
-    fmt(s.acc,1),
-    (s.note||'').replace(/,/g,';')
-  ]);
-  const csv = [header.join(','), ...rows.map(r=>r.join(','))].join('\n');
-  shareOrDownloadCSV(csv, `topoapp_qgis_${safeProjectName()}_${timestampStr()}.csv`);
+  let cumDist = 0;
+  const lines = ['topography in separated list', '2', String(stops.length)];
+  stops.forEach((s,i) => {
+    if(i>0) cumDist += (s.distance || 0);
+    lines.push(`${cumDist.toFixed(1)} ${s.elevation.toFixed(2)}`);
+  });
+  for(let i=0;i<5;i++) lines.push('0');
+  const dat = lines.join('\n');
+  shareOrDownloadCSV(dat, `topoapp_${safeProjectName()}_${timestampStr()}.dat`, 'text/plain;charset=utf-8;');
 }
 </script>
 </body>
