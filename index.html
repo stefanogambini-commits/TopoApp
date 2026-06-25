@@ -192,10 +192,15 @@
   <!-- NOME RILIEVO -->
   <div class="card">
     <h2>🏷️ Rilievo</h2>
-    <div class="field" style="margin-bottom:0;">
+    <div class="field">
       <label>Nome rilievo / progetto</label>
       <input type="text" id="projectName" placeholder="es. Abaiang_Transetto1" oninput="setProjectName(this.value)">
     </div>
+    <div class="field" style="margin-bottom:4px;">
+      <label>Altezza riferimento su asta graduata — x (m)</label>
+      <input type="number" inputmode="decimal" step="0.01" min="0" id="staffHeight" placeholder="es. 1.50">
+    </div>
+    <p class="note-text" style="margin:0;">Quota letta Stop 1 − x = quota reale al suolo. Si propaga automaticamente a tutti gli stop successivi.</p>
   </div>
 
   <!-- ACQUISIZIONE NUOVO STOP -->
@@ -304,6 +309,16 @@
     <div id="tableContent">
       <div class="empty">Nessuno stop registrato.<br>Acquisisci la posizione per iniziare.</div>
     </div>
+  </div>
+
+  <!-- IMPOSTAZIONI DAT -->
+  <div class="card" id="datSettingsCard">
+    <h2>📐 Impostazioni DAT (Res2DInv)</h2>
+    <div class="field" style="margin-bottom:4px;">
+      <label>Passo progressivo fisso (m) — opzionale</label>
+      <input type="number" inputmode="decimal" step="0.1" min="0.1" id="datStep" placeholder="es. 5 — sovrascrive distanze GPS">
+    </div>
+    <p class="note-text" style="margin:0;">Se il passo è impostato, la prima colonna del DAT sarà 0.0, 5.0, 10.0 … indipendentemente dalle distanze GPS. Utile per acquisizioni ERT con spaziatura elettrodi fissa.</p>
   </div>
 
   <!-- AZIONI -->
@@ -449,7 +464,8 @@ function saveStop(){
   let deltaH = 0, elevation;
 
   if(isFirst){
-    elevation = parseFloat(document.getElementById('refElevation').value);
+    const staffH = parseFloat(document.getElementById('staffHeight').value) || 0;
+    elevation = parseFloat(document.getElementById('refElevation').value) - staffH;
     deltaH = null;
   } else {
     const mag = parseFloat(document.getElementById('deltaMag').value) || 0;
@@ -736,13 +752,18 @@ function exportCSV(){
 
 function exportDAT(){
   if(stops.length === 0) return;
+
+  const fixedStep = parseFloat(document.getElementById('datStep').value);
+  const hasStep = !isNaN(fixedStep) && fixedStep > 0;
+
   let cumDist = 0;
   const lines = ['topography in separated list', '2', String(stops.length)];
-  stops.forEach((s,i) => {
-    if(i>0) cumDist += (s.distance || 0);
-    lines.push(`${cumDist.toFixed(1)} ${s.elevation.toFixed(2)}`);
+  stops.forEach((s, i) => {
+    if(!hasStep && i > 0) cumDist += (s.distance || 0);
+    const dist = hasStep ? i * fixedStep : cumDist;
+    lines.push(`${dist.toFixed(1)} ${s.elevation.toFixed(2)}`);
   });
-  for(let i=0;i<5;i++) lines.push('0');
+  for(let i = 0; i < 5; i++) lines.push('0');
   const dat = lines.join('\n');
   shareOrDownloadCSV(dat, `topoapp_${safeProjectName()}_${timestampStr()}.dat`, 'text/plain;charset=utf-8;');
 }
